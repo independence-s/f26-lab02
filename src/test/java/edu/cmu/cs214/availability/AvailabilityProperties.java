@@ -1,5 +1,6 @@
 package edu.cmu.cs214.availability;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.List;
@@ -30,6 +31,20 @@ class AvailabilityProperties {
                 assertFalse(slot.overlaps(booking),
                     () -> "free slot " + slot + " overlaps booking " + booking);
             }
+        }
+    }
+
+    /** Every minute in the business day is either booked or reported as free. */
+    @Property
+    void everyBusinessMinuteIsClassifiedExactlyOnce(@ForAll("scenarios") Scenario s) {
+        List<TimeInterval> free = calc.freeSlots(s.dayStart(), s.dayEnd(), s.bookings());
+        for (int minute = s.dayStart(); minute < s.dayEnd(); minute++) {
+            int checkedMinute = minute;
+            TimeInterval minuteInterval = new TimeInterval(minute, minute + 1);
+            boolean booked = s.bookings().stream().anyMatch(minuteInterval::overlaps);
+            boolean available = free.stream().anyMatch(minuteInterval::overlaps);
+            assertEquals(booked, !available,
+                () -> "minute " + checkedMinute + " was not classified correctly");
         }
     }
 
